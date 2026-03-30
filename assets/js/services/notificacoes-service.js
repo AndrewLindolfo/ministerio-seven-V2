@@ -120,9 +120,13 @@ export async function removeNotificacao(id) {
   await deleteDocument(COLLECTION, id);
 }
 
-export async function listHomeNotificacoes(limitCount = 2) {
+export async function listHomeNotificacoes(limitCount = null) {
   const all = await listNotificacoes(true);
-  return all.filter((item) => item.showHome).slice(0, limitCount);
+  const items = all.filter((item) => item.showHome);
+  if (typeof limitCount === "number" && limitCount > 0) {
+    return items.slice(0, limitCount);
+  }
+  return items;
 }
 
 export async function listPublicNotificacoes() {

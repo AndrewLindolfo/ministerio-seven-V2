@@ -104,7 +104,7 @@ async function renderHomeNotificacoes() {
   if (!section || !grid) return;
 
   try {
-    const items = await listHomeNotificacoes(2);
+    const items = await listHomeNotificacoes();
     if (!items.length) {
       section.hidden = true;
       return;
