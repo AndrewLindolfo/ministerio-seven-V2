@@ -116,7 +116,11 @@ async function buildProfileData(user) {
 }
 
 async function renderLoggedOut(slot) {
-  slot.innerHTML = `<button type="button" id="public-login-button" class="public-login-button">Entrar</button>`;
+  slot.innerHTML = `
+    <button type="button" id="public-login-button" class="public-login-button public-login-button--image-only" aria-label="Entrar">
+      <img src="./assets/img/ui/login-user-preto.png" alt="Entrar" class="public-login-button__image public-login-button__image--light" />
+      <img src="./assets/img/ui/login-user-branco.png" alt="Entrar" class="public-login-button__image public-login-button__image--dark" />
+    </button>`;
   $("#public-login-button")?.addEventListener("click", openPublicAuthModal);
 }
 

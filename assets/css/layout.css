@@ -379,6 +379,18 @@ html[data-theme="light"] .admin-topbar{
   font-weight:700;
 }
 
+.public-login-button__image--dark{
+  display:none;
+}
+
+[data-theme="dark"] .public-login-button__image--light{
+  display:none;
+}
+
+[data-theme="dark"] .public-login-button__image--dark{
+  display:block;
+}
+
 .public-user-menu{
   position:relative;
 }
