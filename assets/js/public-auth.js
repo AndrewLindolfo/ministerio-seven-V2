@@ -36,14 +36,7 @@ function ensureAuthModal() {
       <h2>Entrar</h2>
       <p class="public-auth-modal__text">Faça login para acessar favoritos, playlists e recursos pessoais do site.</p>
       <button type="button" id="public-google-login-button" class="public-auth-modal__google-btn">
-        <span class="public-auth-modal__google-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-            <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.3-1.5 3.9-5.5 3.9-3.3 0-6-2.8-6-6.2s2.7-6.2 6-6.2c1.9 0 3.2.8 3.9 1.5l2.7-2.7C16.9 2.7 14.7 1.8 12 1.8 6.6 1.8 2.2 6.3 2.2 11.8S6.6 21.8 12 21.8c6.9 0 9.1-4.8 9.1-7.3 0-.5 0-.9-.1-1.3H12z"/>
-            <path fill="#34A853" d="M3.3 7.3l3.2 2.3C7.4 7.7 9.5 6 12 6c1.9 0 3.2.8 3.9 1.5l2.7-2.7C16.9 2.7 14.7 1.8 12 1.8 8.2 1.8 4.9 4 3.3 7.3z"/>
-            <path fill="#4A90E2" d="M12 21.8c2.6 0 4.9-.9 6.5-2.5l-3-2.5c-.8.6-2 1.2-3.5 1.2-3.9 0-5.3-2.5-5.5-3.8l-3.2 2.4C4.9 19.8 8.2 21.8 12 21.8z"/>
-            <path fill="#FBBC05" d="M6.5 14.1c-.2-.6-.3-1.2-.3-1.9s.1-1.3.3-1.9L3.3 8C2.6 9.4 2.2 10.5 2.2 11.8s.4 2.4 1.1 3.8l3.2-1.5z"/>
-          </svg>
-        </span>
+        <span class="public-auth-modal__google-icon" aria-hidden="true"><img src="./assets/img/ui/logo-g-login.png" alt="" class="public-auth-modal__google-image" /></span>
         <span>Continuar com Google</span>
       </button>
       <p class="public-auth-modal__footnote">O login não é obrigatório para navegar no site. Ele é usado apenas para recursos pessoais.</p>

@@ -945,6 +945,13 @@ html[data-theme="light"] .admin-topbar{
   justify-content: center;
   flex: 0 0 auto;
 }
+.public-auth-modal__google-image{
+  width:24px;
+  height:24px;
+  display:block;
+  object-fit:contain;
+}
+
 
 .public-auth-modal__google-icon svg{
   width: 24px;
