@@ -20,6 +20,27 @@ function escapeHtml(value = "") {
     .replaceAll('"', "&quot;");
 }
 
+
+function formatInputDateLocal(date) {
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function applyDefaultNotificationDates(force = false) {
+  const startInput = document.getElementById("notificacao-inicio");
+  const endInput = document.getElementById("notificacao-fim");
+  const idInput = document.getElementById("notificacao-id");
+  if (!startInput || !endInput) return;
+  if (!force && idInput?.value) return;
+
+  const now = new Date();
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+  if (force || !startInput.value) startInput.value = formatInputDateLocal(now);
+  if (force || !endInput.value) endInput.value = formatInputDateLocal(tomorrow);
+}
+
+
 function getFormPayload() {
   return {
     title: document.getElementById("notificacao-titulo")?.value?.trim() || "",
@@ -54,6 +75,7 @@ function resetForm() {
   if (top) top.checked = false;
   if (beforeStart) beforeStart.checked = false;
   if (topMode) topMode.value = "device_once";
+  applyDefaultNotificationDates(true);
 }
 
 async function loadIntoForm(id) {
@@ -128,6 +150,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const form = document.getElementById("admin-notificacao-form");
   const resetButton = document.getElementById("notificacao-reset");
   resetForm();
+  applyDefaultNotificationDates(true);
   await renderList();
 
   resetButton?.addEventListener("click", () => resetForm());

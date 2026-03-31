@@ -55,8 +55,22 @@ async function injectAdminCreateShortcut() {
   }
 }
 
+
+function injectHomeLinks() {
+  document.querySelectorAll(".main-nav, .mobile-menu-panel").forEach((nav) => {
+    if (!nav || nav.querySelector('[data-home-link="1"]')) return;
+    const homeLink = document.createElement("a");
+    homeLink.href = "./index.html";
+    homeLink.textContent = "Início";
+    homeLink.setAttribute("data-home-link", "1");
+    homeLink.className = nav.classList.contains("mobile-menu-panel") ? "mobile-nav-link" : "";
+    nav.insertBefore(homeLink, nav.firstChild);
+  });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   initTheme();
+  injectHomeLinks();
   initThemeBranding();
   setFooterYear();
   initSearch();
