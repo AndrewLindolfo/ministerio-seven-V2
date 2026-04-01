@@ -111,7 +111,7 @@ async function onSubmitAlbumForm(event) {
     return;
   }
 
-  if (isGooglePhotosShareUrl(payload.coverUrl)) {
+  if (isGooglePhotosShortUrl(payload.coverUrl)) {
     alert("Aviso: link curto do Google Fotos geralmente não funciona como imagem direta de capa. Se a capa não aparecer, use uma URL direta de imagem.");
   }
 

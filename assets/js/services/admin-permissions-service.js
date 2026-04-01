@@ -8,7 +8,7 @@ export const ADMIN_COLLECTION = "admins";
 
 export const DEFAULT_PERMISSIONS = {
   musicas: { create: false, edit: false, delete: false },
-  cifras: { create: false, edit: false, delete: false, capo: false, bpm: false, compasso: false },
+  cifras: { create: false, edit: false, delete: false, capo: false, bpm: false, compasso: false, inst_violao: false, inst_guitarra: false, inst_baixo: false, inst_teclado: false },
   programacoes: { create: false, edit: false, delete: false },
   fotos: { create: false, edit: false, delete: false },
   downloadsGerais: { create: false, edit: false, delete: false },
@@ -62,6 +62,32 @@ export function hasPermission(admin, moduleKey, permKey) {
 export function hasAnyModulePermission(admin, moduleKey) {
   const perms = getEffectivePermissions(admin);
   return Object.values(perms?.[moduleKey] || {}).some(Boolean);
+}
+
+const CIFRA_INSTRUMENT_PERMISSION_MAP = {
+  violao: "inst_violao",
+  guitarra: "inst_guitarra",
+  baixo: "inst_baixo",
+  teclado: "inst_teclado"
+};
+
+export function getAllowedCifraInstruments(admin = null) {
+  const allInstruments = Object.keys(CIFRA_INSTRUMENT_PERMISSION_MAP);
+  if (isPrimaryAdmin(admin)) return allInstruments;
+
+  const raw = admin?.permissions?.cifras || {};
+  const hasExplicitRestrictions = Object.values(CIFRA_INSTRUMENT_PERMISSION_MAP).some((key) => key in raw);
+  if (!hasExplicitRestrictions && hasAnyModulePermission(admin, "cifras")) {
+    return allInstruments;
+  }
+
+  const perms = getEffectivePermissions(admin);
+  return allInstruments.filter((instrument) => perms?.cifras?.[CIFRA_INSTRUMENT_PERMISSION_MAP[instrument]] === true);
+}
+
+export function canManageCifraInstrument(admin = null, instrument = "") {
+  const normalized = String(instrument || "violao").trim().toLowerCase();
+  return getAllowedCifraInstruments(admin).includes(normalized);
 }
 
 export function canAccessAdminPage(admin, pageKey = "") {

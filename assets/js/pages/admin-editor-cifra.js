@@ -1,5 +1,5 @@
 import { watchAuth, getAdminProfileByEmail } from "../auth.js";
-import { hasPermission } from "../services/admin-permissions-service.js";
+import { hasPermission, getAllowedCifraInstruments, canManageCifraInstrument } from "../services/admin-permissions-service.js";
 import "../editor.js";
 import { setCifraEditorHtml, getCifraEditorPlainText, getCifraEditorHtml } from "../editor.js";
 import { listMusicas, getMusica } from "../services/musicas-service.js";
@@ -9,6 +9,14 @@ import { explainFirebaseError } from "../db.js";
 const params = new URLSearchParams(window.location.search);
 const cifraId = params.get("id") || "";
 let selectedMusicaId = "";
+let currentAdmin = null;
+
+const INSTRUMENT_LABELS = {
+  violao: "Violão",
+  guitarra: "Guitarra",
+  baixo: "Baixo",
+  teclado: "Teclado"
+};
 
 const CHORD_COLOR_HEX = {
   padrao: "#0d0d0d",
@@ -53,6 +61,36 @@ async function renderMusicaSearch(term = "") {
   });
 }
 
+
+function setInstrumentOptionsForAdmin(admin, preferredInstrument = "") {
+  const select = document.getElementById("cifra-instrumento");
+  if (!select) return;
+
+  const allowed = getAllowedCifraInstruments(admin);
+  const options = Array.from(select.options);
+
+  options.forEach((option) => {
+    option.hidden = !allowed.includes(option.value);
+    option.disabled = !allowed.includes(option.value);
+  });
+
+  if (preferredInstrument && allowed.includes(preferredInstrument)) {
+    select.value = preferredInstrument;
+    return;
+  }
+
+  if (!allowed.includes(select.value)) {
+    select.value = allowed[0] || "";
+  }
+}
+
+function ensureInstrumentAccess(admin, instrument = "") {
+  if (canManageCifraInstrument(admin, instrument || "violao")) return true;
+  alert("Você não tem permissão para gerenciar cifras deste instrumento.");
+  window.location.href = "./cifras.html";
+  return false;
+}
+
 function waitForCifraEditor(timeout = 5000) {
   return new Promise((resolve) => {
     const started = Date.now();
@@ -74,14 +112,18 @@ function waitForCifraEditor(timeout = 5000) {
 async function loadCifraIfEditing() {
   if (!cifraId) {
     await renderMusicaSearch("");
+    setInstrumentOptionsForAdmin(currentAdmin);
     return;
   }
 
   const cifra = await getCifra(cifraId);
   if (!cifra) {
     await renderMusicaSearch("");
+    setInstrumentOptionsForAdmin(currentAdmin);
     return;
   }
+
+  if (!ensureInstrumentAccess(currentAdmin, cifra.instrumento || "violao")) return;
 
   selectedMusicaId = cifra.musicaId || "";
   document.getElementById("cifra-musica-search").value = cifra.title || "";
@@ -90,6 +132,7 @@ async function loadCifraIfEditing() {
   document.getElementById("cifra-bpm").value = cifra.bpm || "";
   document.getElementById("cifra-compasso").value = cifra.compasso || "";
   document.getElementById("cifra-instrumento").value = String(cifra.instrumento || "violao").toLowerCase();
+  setInstrumentOptionsForAdmin(currentAdmin, String(cifra.instrumento || "violao").toLowerCase());
   document.getElementById("cifra-chord-color").value = normalizeChordColor(cifra.chordColor || "#0d0d0d");
 
   await waitForCifraEditor();
@@ -102,8 +145,6 @@ async function loadCifraIfEditing() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  await loadCifraIfEditing();
-
   document.getElementById("cifra-musica-search")?.addEventListener("input", async (event) => {
     selectedMusicaId = "";
     await renderMusicaSearch(event.target.value);
@@ -122,18 +163,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       const instrumento = String(document.getElementById("cifra-instrumento")?.value || "violao").trim().toLowerCase();
+      if (!canManageCifraInstrument(currentAdmin, instrumento)) {
+        alert("Você não tem permissão para salvar cifras deste instrumento.");
+        return;
+      }
       const musica = await getMusica(selectedMusicaId);
       const title = musica?.title || document.getElementById("cifra-musica-search")?.value?.trim() || "";
 
       const duplicate = await findDuplicateCifraInstrument(selectedMusicaId, instrumento, cifraId);
       if (duplicate) {
-        const nomes = {
-          violao: "Violão",
-          guitarra: "Guitarra",
-          baixo: "Baixo",
-          teclado: "Teclado"
-        };
-        const instrumentoNome = nomes[instrumento] || instrumento;
+        const instrumentoNome = INSTRUMENT_LABELS[instrumento] || instrumento;
         const editExisting = confirm(`Já existe uma cifra de ${instrumentoNome} para esta música. Deseja editar a existente?`);
         if (editExisting) {
           window.location.href = `./editor-cifra.html?id=${duplicate.id}`;
@@ -184,6 +223,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     try {
+      const currentInstrument = String(document.getElementById("cifra-instrumento")?.value || "violao").trim().toLowerCase();
+      if (!canManageCifraInstrument(currentAdmin, currentInstrument)) {
+        alert("Você não tem permissão para excluir cifras deste instrumento.");
+        return;
+      }
       if (!confirm("Deseja excluir esta cifra?")) return;
       await removeCifra(cifraId);
       alert("🗑️ Cifra excluída com sucesso!");
@@ -206,12 +250,20 @@ watchAuth(async (user) => {
   if (!user?.email) return;
   const admin = await getAdminProfileByEmail(user.email);
   if (!admin) return;
+  currentAdmin = admin;
+  await loadCifraIfEditing();
+  const allowedInstruments = getAllowedCifraInstruments(admin);
   const isEdit = !!cifraId;
   const canSave = isEdit ? hasPermission(admin, 'cifras', 'edit') : hasPermission(admin, 'cifras', 'create');
   const canDelete = isEdit && hasPermission(admin, 'cifras', 'delete');
-  document.querySelector('#admin-editor-cifra-form button[type="submit"]')?.classList.toggle('hidden', !canSave);
-  document.getElementById('delete-cifra-button')?.classList.toggle('hidden', !canDelete);
+  document.querySelector('#admin-editor-cifra-form button[type="submit"]')?.classList.toggle('hidden', !canSave || !allowedInstruments.length);
+  document.getElementById('delete-cifra-button')?.classList.toggle('hidden', !canDelete || !allowedInstruments.length);
   if (!hasPermission(admin, 'cifras', 'capo')) hideField(document.getElementById('cifra-capo'));
   if (!hasPermission(admin, 'cifras', 'bpm')) hideField(document.getElementById('cifra-bpm'));
   if (!hasPermission(admin, 'cifras', 'compasso')) hideField(document.getElementById('cifra-compasso'));
+  if (!allowedInstruments.length) {
+    hideField(document.getElementById('cifra-instrumento'));
+  } else {
+    setInstrumentOptionsForAdmin(admin, document.getElementById('cifra-instrumento')?.value || '');
+  }
 });

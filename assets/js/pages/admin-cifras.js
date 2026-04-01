@@ -1,6 +1,8 @@
 import { watchAuth, getAdminProfileByEmail } from "../auth.js";
-import { hasPermission, isPrimaryAdmin } from "../services/admin-permissions-service.js";
+import { hasPermission, isPrimaryAdmin, getAllowedCifraInstruments, canManageCifraInstrument } from "../services/admin-permissions-service.js";
 import { listCifras, removeCifra, getInstrumentLabel } from "../services/cifras-service.js";
+
+let currentAdmin = null;
 
 function normalizeKey(value = "") {
   return String(value || "").trim().toLowerCase();
@@ -127,7 +129,10 @@ async function renderCifras() {
   if (!box) return;
 
   const all = await listCifras(false);
-  const grouped = groupCifras(all);
+  const visibleItems = isPrimaryAdmin(currentAdmin)
+    ? all
+    : all.filter((item) => canManageCifraInstrument(currentAdmin, item.instrumento || "violao"));
+  const grouped = groupCifras(visibleItems);
   const term = normalizeKey(search?.value || "");
   const filtered = grouped.filter((item) => normalizeKey(item.title).includes(term));
 
@@ -174,11 +179,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function rerenderWithPermissions(admin) {
+  currentAdmin = admin;
   await renderCifras();
   const createBtn = document.querySelector('.admin-toolbar .button-primary');
   if (createBtn) createBtn.classList.toggle('hidden', !hasPermission(admin, 'cifras', 'create'));
-  document.querySelectorAll('[data-edit-id]').forEach((el)=>el.classList.toggle('hidden', !hasPermission(admin, 'cifras', 'edit')));
-  document.querySelectorAll('[data-delete-id]').forEach((el)=>el.classList.toggle('hidden', !hasPermission(admin, 'cifras', 'delete')));
+  document.querySelectorAll('[data-edit-key]').forEach((el)=>el.classList.toggle('hidden', !hasPermission(admin, 'cifras', 'edit')));
+  document.querySelectorAll('[data-delete-key]').forEach((el)=>el.classList.toggle('hidden', !hasPermission(admin, 'cifras', 'delete')));
 }
 watchAuth(async (user) => {
   if (!user?.email) return;

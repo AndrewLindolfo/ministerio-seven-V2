@@ -2,7 +2,7 @@ import { listAdmins, saveSecondaryAdmin, removeSecondaryAdmin, DEFAULT_PERMISSIO
 
 const LABELS = {
   musicas: { create: "Pode criar", edit: "Pode editar", delete: "Pode excluir" },
-  cifras: { create: "Pode criar", edit: "Pode editar", delete: "Pode excluir", capo: "Editar capotraste", bpm: "Editar BPM", compasso: "Editar compasso" },
+  cifras: { create: "Pode criar", edit: "Pode editar", delete: "Pode excluir", capo: "Editar capotraste", bpm: "Editar BPM", compasso: "Editar compasso", inst_violao: "Instrumento: Violão", inst_guitarra: "Instrumento: Guitarra", inst_baixo: "Instrumento: Baixo", inst_teclado: "Instrumento: Teclado" },
   programacoes: { create: "Pode criar", edit: "Pode editar", delete: "Pode excluir" },
   fotos: { create: "Pode criar", edit: "Pode editar", delete: "Pode excluir" },
   downloadsGerais: { create: "Pode criar", edit: "Pode editar", delete: "Pode excluir" },
