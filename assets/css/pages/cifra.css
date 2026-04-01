@@ -1433,3 +1433,208 @@
   background:rgba(17,24,39,.36);
 }
 
+
+/* ===== Ajuste mobile/tablet da janela de acordes ===== */
+@media (max-width: 1024px){
+  .chord-sheet-overlay{
+    padding: 10px;
+    align-items: center;
+  }
+
+  .chord-sheet{
+    width: min(100%, 430px);
+    max-height: min(74vh, 620px);
+    border-radius: 18px;
+    padding: 12px;
+    overflow: auto;
+  }
+
+  .chord-viewer__body{
+    padding: 10px;
+  }
+
+  .chord-sheet__content .chord-viewer__body{
+    min-height: 0;
+  }
+
+  .chord-diagram__board{
+    height: 132px;
+    margin: 0 8px;
+  }
+
+  .chord-diagram__markers{
+    padding: 0 8px 8px;
+  }
+
+  .chord-diagram__dot{
+    width: 21px;
+    height: 21px;
+    font-size: .7rem;
+  }
+
+  .chord-diagram__barre{
+    height: 12px;
+  }
+
+  .chord-viewer__notes{
+    font-size: .86rem;
+  }
+}
+
+@media (max-width: 768px) and (orientation: portrait){
+  .chord-sheet-overlay{
+    padding: 8px;
+    align-items: center;
+  }
+
+  .chord-sheet{
+    width: min(100%, 344px);
+    max-height: min(66vh, 500px);
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .chord-viewer{
+    gap: 8px;
+  }
+
+  .chord-viewer__header{
+    gap: 8px;
+  }
+
+  .chord-viewer__title{
+    font-size: .92rem;
+  }
+
+  .chord-viewer__nav button{
+    width: 28px;
+    height: 28px;
+  }
+
+  .chord-viewer__body{
+    padding: 8px;
+    border-radius: 14px;
+  }
+
+  .chord-diagram__board{
+    height: 102px;
+    margin: 0 4px;
+  }
+
+  .chord-diagram__markers{
+    padding: 0 4px 6px;
+  }
+
+  .chord-diagram__marker{
+    font-size: .84rem;
+    min-height: 14px;
+  }
+
+  .chord-diagram__dot{
+    width: 18px;
+    height: 18px;
+    font-size: .62rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,.22);
+  }
+
+  .chord-diagram__barre{
+    height: 10px;
+  }
+
+  .chord-diagram__base-fret{
+    margin-top: 6px;
+    font-size: .74rem;
+  }
+
+  .chord-diagram__caption{
+    margin-top: 4px;
+    font-size: .76rem;
+  }
+
+  .chord-viewer__notes{
+    font-size: .78rem;
+  }
+}
+
+@media (max-width: 932px) and (orientation: landscape){
+  .chord-sheet-overlay{
+    padding: 8px;
+    align-items: center;
+  }
+
+  .chord-sheet{
+    width: min(100%, 300px);
+    max-height: min(86vh, 360px);
+    padding: 9px;
+    border-radius: 16px;
+  }
+
+  .chord-viewer{
+    gap: 6px;
+  }
+
+  .chord-viewer__header{
+    gap: 6px;
+  }
+
+  .chord-viewer__title{
+    font-size: .88rem;
+  }
+
+  .chord-viewer__counter{
+    font-size: .86rem;
+  }
+
+  .chord-viewer__nav{
+    gap: 4px;
+  }
+
+  .chord-viewer__nav button{
+    width: 26px;
+    height: 26px;
+  }
+
+  .chord-viewer__body{
+    padding: 6px;
+    border-radius: 12px;
+  }
+
+  .chord-diagram__board{
+    height: 84px;
+    margin: 0 2px;
+  }
+
+  .chord-diagram__markers{
+    padding: 0 2px 4px;
+  }
+
+  .chord-diagram__marker{
+    font-size: .78rem;
+    min-height: 12px;
+  }
+
+  .chord-diagram__dot{
+    width: 16px;
+    height: 16px;
+    font-size: .56rem;
+    box-shadow: 0 3px 8px rgba(0,0,0,.20);
+  }
+
+  .chord-diagram__barre{
+    height: 8px;
+  }
+
+  .chord-diagram__base-fret{
+    margin-top: 4px;
+    font-size: .68rem;
+  }
+
+  .chord-diagram__caption{
+    margin-top: 3px;
+    font-size: .72rem;
+  }
+
+  .chord-viewer__notes{
+    font-size: .72rem;
+  }
+}
