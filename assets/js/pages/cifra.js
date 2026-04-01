@@ -1,6 +1,7 @@
 
-import { getCifraBySlug, listCifras, listCifrasBySlug, getInstrumentLabel, normalizeInstrument, saveCifra } from "../services/cifras-service.js";
+import { getCifraBySlug, getCifra, listCifras, listCifrasBySlug, getInstrumentLabel, normalizeInstrument, updateCifraMetronome } from "../services/cifras-service.js";
 import { getMusica } from "../services/musicas-service.js";
+import { watchDocument } from "../db.js";
 import { getQueryParam } from "../utils.js";
 import { initCifraControls, setOriginalMetaTom } from "../modules/cifra-controls.js";
 import { watchAuth, getAdminProfileByEmail } from "../auth.js";
@@ -524,6 +525,8 @@ function initMiniMetronome(cifra = {}) {
 
 let currentPublicCifra = null;
 let currentAdminCanEditMiniMetronome = false;
+let currentPublicCifraLiveUnsubscribe = null;
+let currentPublicCifraLiveSignature = "";
 const COMPASSO_OPTIONS = ["2/4","3/4","4/4","5/4","6/8","7/8","9/8","12/8"];
 
 function ensureMiniMetronomeEditUi() {
@@ -632,8 +635,11 @@ async function openMiniMetronomeEditModal() {
         bpm,
         compasso
       };
-      await saveCifra(next, currentPublicCifra.id);
-      currentPublicCifra = { ...currentPublicCifra, bpm, compasso };
+      await updateCifraMetronome(currentPublicCifra.id, bpm, compasso);
+      const refreshed = await getCifra(currentPublicCifra.id);
+      currentPublicCifra = refreshed ? { ...refreshed } : { ...currentPublicCifra, bpm, compasso };
+      currentPublicCifraLiveSignature = buildPublicCifraSignature(currentPublicCifra);
+      hideCifraUpdateBanner();
       setOriginalMetaTom(
         currentPublicCifra.originalKey || currentPublicCifra.tonality || currentPublicCifra.tom || "C",
         currentPublicCifra.capo || "",
@@ -692,6 +698,73 @@ function buildDemoInstrumentOption(baseCifra) {
   };
 }
 
+
+function buildPublicCifraSignature(cifra = {}) {
+  return JSON.stringify({
+    id: String(cifra.id || ""),
+    slug: String(cifra.slug || ""),
+    title: String(cifra.title || ""),
+    subtitle: String(cifra.subtitle || ""),
+    cifraText: String(cifra.cifraText || ""),
+    cifraHtml: String(cifra.cifraHtml || ""),
+    originalKey: String(cifra.originalKey || cifra.tonality || cifra.tom || ""),
+    capo: String(cifra.capo || ""),
+    bpm: String(cifra.bpm || ""),
+    compasso: String(cifra.compasso || ""),
+    instrumento: String(cifra.instrumento || ""),
+    chordColor: String(cifra.chordColor || ""),
+    active: cifra.active !== false
+  });
+}
+
+function ensureCifraUpdateBanner() {
+  let banner = document.getElementById("cifra-live-update-banner");
+  if (banner) return banner;
+  banner = document.createElement("button");
+  banner.type = "button";
+  banner.id = "cifra-live-update-banner";
+  banner.className = "cifra-live-update-banner hidden";
+  banner.textContent = "Essa cifra foi atualizada. Toque para atualizar";
+  banner.addEventListener("click", () => {
+    window.location.reload();
+  });
+  document.body.appendChild(banner);
+  return banner;
+}
+
+function showCifraUpdateBanner() {
+  ensureCifraUpdateBanner().classList.remove("hidden");
+}
+
+function hideCifraUpdateBanner() {
+  ensureCifraUpdateBanner().classList.add("hidden");
+}
+
+function startPublicCifraLiveWatch(cifra = {}) {
+  if (currentPublicCifraLiveUnsubscribe) {
+    currentPublicCifraLiveUnsubscribe();
+    currentPublicCifraLiveUnsubscribe = null;
+  }
+  hideCifraUpdateBanner();
+  if (!cifra?.id) return;
+
+  currentPublicCifraLiveSignature = buildPublicCifraSignature(cifra);
+
+  currentPublicCifraLiveUnsubscribe = watchDocument("cifras", cifra.id, (nextDoc) => {
+    if (!nextDoc) return;
+    const nextSignature = buildPublicCifraSignature(nextDoc);
+    if (!currentPublicCifraLiveSignature) {
+      currentPublicCifraLiveSignature = nextSignature;
+      return;
+    }
+    if (nextSignature !== currentPublicCifraLiveSignature) {
+      showCifraUpdateBanner();
+    }
+  }, (error) => {
+    console.error("Erro ao observar atualizações da cifra pública:", error);
+  });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     const slug = getQueryParam("slug");
@@ -700,12 +773,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const titleEl = document.getElementById("cifra-titulo");
     const subtitleEl = document.getElementById("cifra-subtitulo");
     const letraLink = document.getElementById("ver-letra-link");
-    let currentCifra = await getCifraBySlug(slug, requestedInstrument);
+    let currentCifra = await getCifraBySlug(slug, requestedInstrument, true);
     if (!currentCifra) {
       if (titleEl) titleEl.textContent = "Cifra não encontrada";
       return;
     }
-    let instrumentOptions = await listCifrasBySlug(slug, true);
+    let instrumentOptions = await listCifrasBySlug(slug, true, true);
     if (demoMode && instrumentOptions.length === 1) {
       instrumentOptions = [...instrumentOptions, buildDemoInstrumentOption(instrumentOptions[0])];
       if (requestedInstrument === "teclado") {
@@ -734,11 +807,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     const allCifras = await listCifras(true);
     const uniqueBySlug = Array.from(new Map(allCifras.map((item) => [item.slug, item])).values());
     renderPrevNext(currentCifra.slug, currentCifra.instrumento || requestedInstrument, uniqueBySlug);
+    startPublicCifraLiveWatch(currentCifra);
     initCifraControls();
     initInteractiveChordViewer();
   } catch (error) {
     console.error("Erro ao carregar cifra pública:", error);
     const titleEl = document.getElementById("cifra-titulo");
     if (titleEl) titleEl.textContent = "Erro ao carregar cifra";
+  }
+});
+
+
+window.addEventListener("beforeunload", () => {
+  if (currentPublicCifraLiveUnsubscribe) {
+    currentPublicCifraLiveUnsubscribe();
+    currentPublicCifraLiveUnsubscribe = null;
   }
 });

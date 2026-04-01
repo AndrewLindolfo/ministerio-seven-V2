@@ -13,7 +13,8 @@ import {
   orderBy,
   limit,
   serverTimestamp,
-  increment
+  increment,
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export { serverTimestamp, increment };
@@ -95,4 +96,11 @@ export function explainFirebaseError(error) {
     return "Firestore indisponível no momento. Tente de novo.";
   }
   return error?.message || "Erro desconhecido ao acessar o Firebase.";
+}
+
+
+export function watchDocument(collectionName, id, callback, onError = null) {
+  return onSnapshot(doc(db, collectionName, id), (snap) => {
+    callback(snap.exists() ? { id: snap.id, ...snap.data() } : null);
+  }, onError || ((error) => console.error("Erro ao observar documento:", error)));
 }

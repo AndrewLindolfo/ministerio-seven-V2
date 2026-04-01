@@ -93,9 +93,11 @@ function normalizeList(all = [], activeOnly = false) {
     .sort((a, b) => String(a.title || "").localeCompare(String(b.title || ""), "pt-BR"));
 }
 
-export async function listCifras(activeOnly = false) {
-  const cached = readCache();
-  if (cached) return normalizeList(cached, activeOnly);
+export async function listCifras(activeOnly = false, bypassCache = false) {
+  if (!bypassCache) {
+    const cached = readCache();
+    if (cached) return normalizeList(cached, activeOnly);
+  }
   const all = await getCollection(COLLECTION);
   writeCache(all);
   return normalizeList(all, activeOnly);
@@ -111,15 +113,15 @@ export async function getCifra(id) {
   };
 }
 
-export async function listCifrasBySlug(slug, activeOnly = true) {
+export async function listCifrasBySlug(slug, activeOnly = true, bypassCache = false) {
   const wantedSlug = String(slug || "").trim();
   if (!wantedSlug) return [];
-  const all = await listCifras(activeOnly);
+  const all = await listCifras(activeOnly, bypassCache);
   return all.filter((item) => String(item.slug || "").trim() === wantedSlug);
 }
 
-export async function getCifraBySlug(slug, instrumento = "") {
-  const variants = await listCifrasBySlug(slug, true);
+export async function getCifraBySlug(slug, instrumento = "", bypassCache = false) {
+  const variants = await listCifrasBySlug(slug, true, bypassCache);
   if (!variants.length) return null;
 
   const normalizedInstrument = normalizeInstrument(instrumento || "");
