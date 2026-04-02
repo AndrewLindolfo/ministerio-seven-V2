@@ -1,15 +1,5 @@
-const TINYMCE_BASE_URL = new URL("../vendor/tinymce/js/tinymce", import.meta.url).href.replace(/\/$/, "");
-const TINYMCE_SRC = `${TINYMCE_BASE_URL}/tinymce.min.js`;
-
-function getTinyMCEInitBase() {
-  return {
-    base_url: TINYMCE_BASE_URL,
-    suffix: ".min",
-    license_key: "gpl",
-    promotion: false,
-    branding: false
-  };
-}
+const TINYMCE_BASE_URL = new URL("../vendor/tinymce/js/tinymce", import.meta.url).href;
+const TINYMCE_SRC = new URL("../vendor/tinymce/js/tinymce/tinymce.min.js", import.meta.url).href;
 
 function loadTinyMCE() {
   return new Promise((resolve, reject) => {
@@ -22,7 +12,7 @@ function loadTinyMCE() {
     if (existing) {
       existing.addEventListener("load", () => {
         if (window.tinymce) resolve(window.tinymce);
-        else reject(new Error("TinyMCE carregado, mas o objeto global não foi inicializado."));
+        else reject(new Error("TinyMCE carregou, mas não foi inicializado corretamente."));
       }, { once: true });
       existing.addEventListener("error", () => reject(new Error("Não foi possível carregar o arquivo principal do TinyMCE.")), { once: true });
       return;
@@ -34,9 +24,9 @@ function loadTinyMCE() {
     script.dataset.tinymceLoader = "true";
     script.onload = () => {
       if (window.tinymce) resolve(window.tinymce);
-      else reject(new Error("TinyMCE carregado, mas não inicializou corretamente."));
+      else reject(new Error("TinyMCE não ficou disponível após o carregamento do script."));
     };
-    script.onerror = () => reject(new Error(`Não foi possível carregar o TinyMCE em ${TINYMCE_SRC}`));
+    script.onerror = () => reject(new Error(`Não foi possível carregar o TinyMCE local em: ${TINYMCE_SRC}`));
     document.head.appendChild(script);
   });
 }
@@ -50,19 +40,15 @@ function escapeHtml(text = "") {
 
 function normalizeCifraPlainText(raw = "") {
   return String(raw || "")
-    .replace(/ /g, " ")
-    .replace(/
-/g, "
-")
-    .replace(//g, "
-")
-    .replace(/	/g, "    ");
+    .replace(/\u00A0/g, " ")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\t/g, "    ");
 }
 
 function plainToCifraHtml(text = "") {
   return normalizeCifraPlainText(text)
-    .split("
-")
+    .split("\n")
     .map((line) => escapeHtml(line).replace(/ /g, "&nbsp;"))
     .join("<br>");
 }
@@ -71,17 +57,12 @@ function htmlToPlainCifra(editor) {
   const body = editor?.getBody?.();
   if (!body) return "";
   return normalizeCifraPlainText(body.innerText || body.textContent || "")
-    .replace(/
-{3,}/g, "
-
-")
+    .replace(/\n{3,}/g, "\n\n")
     .trimEnd();
 }
 
 function normalizeRichCifraHtml(html = "") {
-  return String(html || "").replace(/
-?/g, "
-").trim();
+  return String(html || "").replace(/\r\n?/g, "\n").trim();
 }
 
 function preserveCifraSpacingHtml(rawHtml = "") {
@@ -97,12 +78,27 @@ function preserveCifraSpacingHtml(rawHtml = "") {
 
   textNodes.forEach((node) => {
     const value = String(node.nodeValue || "")
-      .replace(/	/g, "    ")
-      .replace(/ /g, " ");
+      .replace(/\t/g, "\u00A0\u00A0\u00A0\u00A0")
+      .replace(/ /g, "\u00A0");
     node.nodeValue = value;
   });
 
   return wrapper.innerHTML;
+}
+
+function getCommonTinyOptions() {
+  return {
+    license_key: "gpl",
+    base_url: TINYMCE_BASE_URL,
+    suffix: ".min",
+    skin: "oxide",
+    icons: "default",
+    promotion: false,
+    branding: false,
+    browser_spellcheck: true,
+    contextmenu: false,
+    convert_urls: false,
+  };
 }
 
 async function initMusicaEditor() {
@@ -115,13 +111,13 @@ async function initMusicaEditor() {
   const initialValue = textarea.dataset.initialValue || textarea.value || "";
 
   await window.tinymce.init({
-    ...getTinyMCEInitBase(),
+    ...getCommonTinyOptions(),
     selector: "#musica-letra",
     height: 340,
     menubar: true,
     plugins: "lists link code table fullscreen preview searchreplace visualblocks",
     toolbar:
-      "undo redo | blocks fontfamily fontsize | bold italic underline forecolor backcolor | " +
+      "undo redo | blocks fontsize | bold italic underline forecolor backcolor | " +
       "alignleft aligncenter alignright alignjustify | bullist numlist | link table | code fullscreen preview",
     content_style: `
       body {
@@ -155,7 +151,7 @@ async function initCifraEditor() {
   const initialValue = textarea.dataset.initialValue || textarea.value || "";
 
   await window.tinymce.init({
-    ...getTinyMCEInitBase(),
+    ...getCommonTinyOptions(),
     selector: "#cifra-conteudo",
     height: 340,
     menubar: true,
@@ -256,9 +252,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     await initSevenEditors();
   } catch (error) {
-    console.error(error);
-    alert(`Erro ao carregar o editor TinyMCE local.
-
-Detalhe: ${error?.message || error}`);
+    console.error("Falha ao iniciar o TinyMCE:", error);
+    alert(`Erro ao carregar o editor TinyMCE local.\n\nDetalhe: ${error?.message || error}`);
   }
 });
