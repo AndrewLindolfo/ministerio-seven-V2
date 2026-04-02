@@ -42,15 +42,28 @@ function closePopup(wrapper, item) {
   setTimeout(() => wrapper.remove(), 180);
 }
 
+function getPopupTypeMeta(type = "aviso") {
+  const normalized = String(type || "aviso").toLowerCase();
+  const map = {
+    novidade: { icon: "✨", label: "NOVIDADE" },
+    aviso: { icon: "⚠", label: "AVISO" },
+    evento: { icon: "📅", label: "EVENTO" },
+    destaque: { icon: "⭐", label: "DESTAQUE" },
+  };
+  return map[normalized] || { icon: "📢", label: normalized.toUpperCase() };
+}
+
 function renderPopup(item) {
   const wrapper = document.createElement("div");
+  const type = escapeHtml(item.type || item.tipo || "aviso");
+  const meta = getPopupTypeMeta(type);
   wrapper.className = "notificacao-popup-overlay";
   wrapper.innerHTML = `
-    <div class="notificacao-popup-card tipo-${escapeHtml(item.type || item.tipo || "aviso")}" role="dialog" aria-modal="true" aria-label="Notificação">
+    <div class="notificacao-popup-card tipo-${type}" role="dialog" aria-modal="true" aria-label="Notificação">
       <button type="button" class="notificacao-popup-close" aria-label="Fechar">✕</button>
-      <span class="notificacao-chip tipo-${escapeHtml(item.type || item.tipo || "aviso")}">${escapeHtml(item.type || item.tipo || "aviso")}</span>
-      <h3>${escapeHtml(item.title || "Notificação")}</h3>
-      <p>${escapeHtml(item.message || "")}</p>
+      <span class="notificacao-popup-chip">${meta.icon} ${escapeHtml(meta.label)}</span>
+      <h3 class="notificacao-popup-title">${escapeHtml(item.title || "Notificação")}</h3>
+      <p class="notificacao-popup-message">${escapeHtml(item.message || "")}</p>
       <div class="notificacao-popup-actions">
         ${item.buttonLink && item.buttonText ? `<a class="button-primary" href="${escapeHtml(item.buttonLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.buttonText)}</a>` : ""}
         <button type="button" class="button-outline notificacao-popup-dismiss">Fechar</button>
