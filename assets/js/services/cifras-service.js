@@ -21,7 +21,8 @@ const INSTRUMENT_LABELS = {
 };
 
 const CHORD_COLOR_HEX = {
-  padrao: "#0d0d0d",
+  padrao: "#FF5C00",
+  preto: "#0d0d0d",
   azul: "#3b82f6",
   vermelho: "#ef4444",
   verde: "#22c55e",
@@ -88,7 +89,7 @@ function normalizeList(all = [], activeOnly = false) {
     .map((item) => ({
       ...item,
       instrumento: normalizeInstrument(item.instrumento || "violao"),
-      chordColor: normalizeChordColor(item.chordColor || "#0d0d0d")
+      chordColor: normalizeChordColor(item.chordColor || "#FF5C00")
     }))
     .sort((a, b) => String(a.title || "").localeCompare(String(b.title || ""), "pt-BR"));
 }
@@ -109,7 +110,7 @@ export async function getCifra(id) {
   return {
     ...item,
     instrumento: normalizeInstrument(item.instrumento || "violao"),
-    chordColor: normalizeChordColor(item.chordColor || "#0d0d0d")
+    chordColor: normalizeChordColor(item.chordColor || "#FF5C00")
   };
 }
 

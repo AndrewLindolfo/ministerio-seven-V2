@@ -19,7 +19,8 @@ const INSTRUMENT_LABELS = {
 };
 
 const CHORD_COLOR_HEX = {
-  padrao: "#0d0d0d",
+  padrao: "#FF5C00",
+  preto: "#0d0d0d",
   azul: "#3b82f6",
   vermelho: "#ef4444",
   verde: "#22c55e",
@@ -133,7 +134,7 @@ async function loadCifraIfEditing() {
   document.getElementById("cifra-compasso").value = cifra.compasso || "";
   document.getElementById("cifra-instrumento").value = String(cifra.instrumento || "violao").toLowerCase();
   setInstrumentOptionsForAdmin(currentAdmin, String(cifra.instrumento || "violao").toLowerCase());
-  document.getElementById("cifra-chord-color").value = normalizeChordColor(cifra.chordColor || "#0d0d0d");
+  document.getElementById("cifra-chord-color").value = normalizeChordColor(cifra.chordColor || "#FF5C00");
 
   await waitForCifraEditor();
   setCifraEditorHtml(String(cifra.cifraHtml || cifra.cifraText || "").replace(/\r\n?/g, "\n"));

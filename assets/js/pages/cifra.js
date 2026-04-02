@@ -12,7 +12,7 @@ const CHORD_TOKEN_REGEX = /^[A-G](?:#|b)?(?:(?:maj|min|m|sus|dim|aug|add|mmaj)?(
 const INTRO_LINE_REGEX = /^\s*\[Intro\]\s*$/i;
 const INTRO_WITH_CHORDS_REGEX = /^\s*\[Intro\]\s+/i;
 const CHORD_COLOR_MAP = {
-  padrao: "#0d0d0d",
+  padrao: "#FF5C00",
   preto: "#0d0d0d",
   azul: "#3b82f6",
   vermelho: "#ef4444",
