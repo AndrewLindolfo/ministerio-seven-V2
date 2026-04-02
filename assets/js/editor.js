@@ -1,21 +1,15 @@
-function resolveTinyMceSrc() {
-  const explicit = window.__SEVEN_TINYMCE_SRC__;
-  if (typeof explicit === "string" && explicit.trim()) return explicit.trim();
+const TINYMCE_BASE_URL = new URL("../vendor/tinymce/js/tinymce", import.meta.url).href.replace(/\/$/, "");
+const TINYMCE_SRC = `${TINYMCE_BASE_URL}/tinymce.min.js`;
 
-  const currentScript = document.currentScript?.src || "";
-  if (currentScript) {
-    try {
-      const url = new URL(currentScript, window.location.href);
-      return `${url.origin}/assets/vendor/tinymce/js/tinymce/tinymce.min.js`;
-    } catch (_) {
-      // fallback below
-    }
-  }
-
-  return `${window.location.origin}/assets/vendor/tinymce/js/tinymce/tinymce.min.js`;
+function getTinyMCEInitBase() {
+  return {
+    base_url: TINYMCE_BASE_URL,
+    suffix: ".min",
+    license_key: "gpl",
+    promotion: false,
+    branding: false
+  };
 }
-
-const TINYMCE_SRC = resolveTinyMceSrc();
 
 function loadTinyMCE() {
   return new Promise((resolve, reject) => {
@@ -26,8 +20,11 @@ function loadTinyMCE() {
 
     const existing = document.querySelector('script[data-tinymce-loader="true"]');
     if (existing) {
-      existing.addEventListener("load", () => resolve(window.tinymce), { once: true });
-      existing.addEventListener("error", reject, { once: true });
+      existing.addEventListener("load", () => {
+        if (window.tinymce) resolve(window.tinymce);
+        else reject(new Error("TinyMCE carregado, mas o objeto global não foi inicializado."));
+      }, { once: true });
+      existing.addEventListener("error", () => reject(new Error("Não foi possível carregar o arquivo principal do TinyMCE.")), { once: true });
       return;
     }
 
@@ -35,8 +32,11 @@ function loadTinyMCE() {
     script.src = TINYMCE_SRC;
     script.async = true;
     script.dataset.tinymceLoader = "true";
-    script.onload = () => resolve(window.tinymce);
-    script.onerror = () => reject(new Error("Não foi possível carregar o TinyMCE local."));
+    script.onload = () => {
+      if (window.tinymce) resolve(window.tinymce);
+      else reject(new Error("TinyMCE carregado, mas não inicializou corretamente."));
+    };
+    script.onerror = () => reject(new Error(`Não foi possível carregar o TinyMCE em ${TINYMCE_SRC}`));
     document.head.appendChild(script);
   });
 }
@@ -50,15 +50,19 @@ function escapeHtml(text = "") {
 
 function normalizeCifraPlainText(raw = "") {
   return String(raw || "")
-    .replace(/\u00A0/g, " ")
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
-    .replace(/\t/g, "    ");
+    .replace(/ /g, " ")
+    .replace(/
+/g, "
+")
+    .replace(//g, "
+")
+    .replace(/	/g, "    ");
 }
 
 function plainToCifraHtml(text = "") {
   return normalizeCifraPlainText(text)
-    .split("\n")
+    .split("
+")
     .map((line) => escapeHtml(line).replace(/ /g, "&nbsp;"))
     .join("<br>");
 }
@@ -67,12 +71,17 @@ function htmlToPlainCifra(editor) {
   const body = editor?.getBody?.();
   if (!body) return "";
   return normalizeCifraPlainText(body.innerText || body.textContent || "")
-    .replace(/\n{3,}/g, "\n\n")
+    .replace(/
+{3,}/g, "
+
+")
     .trimEnd();
 }
 
 function normalizeRichCifraHtml(html = "") {
-  return String(html || "").replace(/\r\n?/g, "\n").trim();
+  return String(html || "").replace(/
+?/g, "
+").trim();
 }
 
 function preserveCifraSpacingHtml(rawHtml = "") {
@@ -88,8 +97,8 @@ function preserveCifraSpacingHtml(rawHtml = "") {
 
   textNodes.forEach((node) => {
     const value = String(node.nodeValue || "")
-      .replace(/\t/g, "\u00A0\u00A0\u00A0\u00A0")
-      .replace(/ /g, "\u00A0");
+      .replace(/	/g, "    ")
+      .replace(/ /g, " ");
     node.nodeValue = value;
   });
 
@@ -106,12 +115,10 @@ async function initMusicaEditor() {
   const initialValue = textarea.dataset.initialValue || textarea.value || "";
 
   await window.tinymce.init({
+    ...getTinyMCEInitBase(),
     selector: "#musica-letra",
-    license_key: "gpl",
     height: 340,
     menubar: true,
-    promotion: false,
-    branding: false,
     plugins: "lists link code table fullscreen preview searchreplace visualblocks",
     toolbar:
       "undo redo | blocks fontfamily fontsize | bold italic underline forecolor backcolor | " +
@@ -148,12 +155,10 @@ async function initCifraEditor() {
   const initialValue = textarea.dataset.initialValue || textarea.value || "";
 
   await window.tinymce.init({
+    ...getTinyMCEInitBase(),
     selector: "#cifra-conteudo",
-    license_key: "gpl",
     height: 340,
     menubar: true,
-    promotion: false,
-    branding: false,
     forced_root_block: false,
     paste_as_text: false,
     entity_encoding: "named",
@@ -251,7 +256,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     await initSevenEditors();
   } catch (error) {
-    console.error("Falha ao iniciar o TinyMCE:", error);
-    alert("Erro ao carregar o editor TinyMCE local.");
+    console.error(error);
+    alert(`Erro ao carregar o editor TinyMCE local.
+
+Detalhe: ${error?.message || error}`);
   }
 });
