@@ -2,6 +2,9 @@ import { listMusicas } from "../services/musicas-service.js";
 import { getSiteConfig } from "../services/config-service.js";
 import { renderProgramacaoCard } from "../modules/programacao-card.js";
 import { listHomeNotificacoes, getTopNotificacao } from "../services/notificacoes-service.js";
+import { watchCollection } from "../db.js";
+
+let homeLiveUnsubscribes = [];
 
 function escapeHtml(value = "") {
   return String(value)
@@ -149,10 +152,37 @@ async function renderDestaques() {
   }
 }
 
+
+function initHomeLiveUpdates() {
+  homeLiveUnsubscribes.forEach((fn) => { try { fn(); } catch {} });
+  homeLiveUnsubscribes = [];
+
+  homeLiveUnsubscribes.push(
+    watchCollection("programacoes", async () => {
+      await renderProgramacaoCard();
+    })
+  );
+
+  homeLiveUnsubscribes.push(
+    watchCollection("notificacoes", async () => {
+      await renderTopNotificacao();
+      await renderHomeNotificacoes();
+    })
+  );
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
+
   await renderTopNotificacao();
   await renderSevenPhoto();
   await renderProgramacaoCard();
   await renderHomeNotificacoes();
   await renderDestaques();
+  initHomeLiveUpdates();
+});
+
+
+window.addEventListener("beforeunload", () => {
+  homeLiveUnsubscribes.forEach((fn) => { try { fn(); } catch {} });
+  homeLiveUnsubscribes = [];
 });

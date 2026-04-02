@@ -1671,3 +1671,32 @@
     line-height: 1.25;
   }
 }
+
+
+/* Ajuste do aviso de atualização da cifra no celular */
+@media (max-width: 768px){
+  .cifra-live-update-banner{
+    position: fixed !important;
+    left: 50% !important;
+    top: max(10px, env(safe-area-inset-top)) !important;
+    transform: translateX(-50%) !important;
+    z-index: 220 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: min(94vw, 360px) !important;
+    max-width: calc(100vw - 12px) !important;
+    min-height: 42px !important;
+    padding: 10px 14px !important;
+    border-radius: 16px !important;
+    font-size: .82rem !important;
+    text-align: center !important;
+    line-height: 1.22 !important;
+    white-space: normal !important;
+    box-shadow: 0 12px 28px rgba(0,0,0,.22) !important;
+  }
+
+  .cifra-live-update-banner.hidden{
+    display: none !important;
+  }
+}

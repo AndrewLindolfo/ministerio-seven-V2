@@ -3,6 +3,63 @@ import { listCifrasByMusica, getInstrumentLabel, normalizeInstrument } from "../
 import { getQueryParam } from "../utils.js";
 import { initMusicaControls } from "../modules/musica-controls.js";
 import { createPersonalButtons, refreshPersonalActionButtons } from "../modules/personal-actions.js";
+import { watchDocument } from "../db.js";
+
+let currentPublicMusicaLiveUnsubscribe = null;
+let currentPublicMusicaLiveSignature = "";
+
+function buildPublicMusicaSignature(musica = {}) {
+  return JSON.stringify({
+    id: String(musica.id || ""),
+    slug: String(musica.slug || ""),
+    title: String(musica.title || ""),
+    subtitle: String(musica.subtitle || ""),
+    author: String(musica.author || ""),
+    originalKey: String(musica.originalKey || ""),
+    category: String(musica.category || ""),
+    youtubeUrl: String(musica.youtubeUrl || ""),
+    lyricHtml: String(musica.lyricHtml || ""),
+    active: musica.active !== false
+  });
+}
+
+function ensureMusicaUpdateBanner() {
+  let banner = document.getElementById("musica-live-update-banner");
+  if (banner) return banner;
+  banner = document.createElement("button");
+  banner.type = "button";
+  banner.id = "musica-live-update-banner";
+  banner.className = "musica-live-update-banner hidden";
+  banner.textContent = "Essa música foi atualizada. Toque para atualizar";
+  banner.addEventListener("click", () => window.location.reload());
+  document.body.appendChild(banner);
+  return banner;
+}
+
+function hideMusicaUpdateBanner() {
+  ensureMusicaUpdateBanner().classList.add("hidden");
+}
+
+function showMusicaUpdateBanner() {
+  ensureMusicaUpdateBanner().classList.remove("hidden");
+}
+
+function startPublicMusicaLiveWatch(musica = {}) {
+  if (currentPublicMusicaLiveUnsubscribe) {
+    currentPublicMusicaLiveUnsubscribe();
+    currentPublicMusicaLiveUnsubscribe = null;
+  }
+  hideMusicaUpdateBanner();
+  if (!musica?.id) return;
+  currentPublicMusicaLiveSignature = buildPublicMusicaSignature(musica);
+  currentPublicMusicaLiveUnsubscribe = watchDocument("musicas", musica.id, (nextDoc) => {
+    if (!nextDoc) return;
+    const nextSignature = buildPublicMusicaSignature(nextDoc);
+    if (nextSignature !== currentPublicMusicaLiveSignature) {
+      showMusicaUpdateBanner();
+    }
+  }, (error) => console.error("Erro ao observar atualizações da música pública:", error));
+}
 
 function escapeHtml(value = "") {
   return String(value)
@@ -215,11 +272,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const all = await listMusicas(true);
     renderPrevNext(musica.slug, all);
+    startPublicMusicaLiveWatch(musica);
 
     initMusicaControls();
   } catch (error) {
     console.error("Erro ao carregar música pública:", error);
     const titleEl = document.getElementById("musica-titulo");
     if (titleEl) titleEl.textContent = "Erro ao carregar música";
+  }
+});
+
+window.addEventListener("beforeunload", () => {
+  if (currentPublicMusicaLiveUnsubscribe) {
+    currentPublicMusicaLiveUnsubscribe();
+    currentPublicMusicaLiveUnsubscribe = null;
   }
 });

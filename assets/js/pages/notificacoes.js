@@ -1,4 +1,5 @@
 import { listPublicNotificacoes } from "../services/notificacoes-service.js";
+import { watchCollection } from "../db.js";
 
 function escapeHtml(value = "") {
   return String(value)
@@ -38,7 +39,7 @@ function groupByDay(items = []) {
   return [...groups.entries()];
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
+async function renderPublicNotificacoesPage() {
   const box = document.getElementById("notificacoes-lista");
   if (!box) return;
 
@@ -74,5 +75,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   } catch (error) {
     console.error("Erro ao carregar notificações públicas:", error);
     box.innerHTML = '<div class="notificacao-publica-card"><p>Não foi possível carregar as notificações agora.</p></div>';
+  }
+}
+
+let notificacoesLiveUnsubscribe = null;
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await renderPublicNotificacoesPage();
+  notificacoesLiveUnsubscribe = watchCollection("notificacoes", async () => {
+    await renderPublicNotificacoesPage();
+  });
+});
+
+window.addEventListener("beforeunload", () => {
+  if (notificacoesLiveUnsubscribe) {
+    try { notificacoesLiveUnsubscribe(); } catch {}
+    notificacoesLiveUnsubscribe = null;
   }
 });
