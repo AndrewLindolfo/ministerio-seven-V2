@@ -1,4 +1,21 @@
-const TINYMCE_SRC = "/assets/vendor/tinymce/js/tinymce/tinymce.min.js";
+function resolveTinyMceSrc() {
+  const explicit = window.__SEVEN_TINYMCE_SRC__;
+  if (typeof explicit === "string" && explicit.trim()) return explicit.trim();
+
+  const currentScript = document.currentScript?.src || "";
+  if (currentScript) {
+    try {
+      const url = new URL(currentScript, window.location.href);
+      return `${url.origin}/assets/vendor/tinymce/js/tinymce/tinymce.min.js`;
+    } catch (_) {
+      // fallback below
+    }
+  }
+
+  return `${window.location.origin}/assets/vendor/tinymce/js/tinymce/tinymce.min.js`;
+}
+
+const TINYMCE_SRC = resolveTinyMceSrc();
 
 function loadTinyMCE() {
   return new Promise((resolve, reject) => {
@@ -141,7 +158,7 @@ async function initCifraEditor() {
     paste_as_text: false,
     entity_encoding: "named",
     verify_html: false,
-    plugins: "code fullscreen preview searchreplace visualblocks textcolor nonbreaking",
+    plugins: "code fullscreen preview searchreplace visualblocks nonbreaking",
     toolbar: "undo redo | bold italic underline forecolor backcolor | code fullscreen preview",
     content_style: `
       body {
@@ -234,7 +251,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     await initSevenEditors();
   } catch (error) {
-    console.error(error);
+    console.error("Falha ao iniciar o TinyMCE:", error);
     alert("Erro ao carregar o editor TinyMCE local.");
   }
 });
